@@ -7,6 +7,7 @@
     <style type="text/css">
         body {
             margin: 0;
+            overflow: hidden;
         }
     </style>
 </head>
@@ -16,8 +17,8 @@
 
 var config = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 600,
+    width: window.innerWidth,
+    height: window.innerHeight,
     physics: {
         default: 'arcade',
         arcade: {
@@ -70,7 +71,17 @@ function create ()
 
     //  The score
     scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
-    scoreText.setScrollFactor(0);}
+    scoreText.setScrollFactor(0);
+
+
+    // Add blue rectangle outline representing the world bounds
+    var graphics = this.add.graphics();
+    graphics.lineStyle(4, 0x0000ff, 1);
+    graphics.strokeRect(0, 0, worldWidth, worldHeight);
+
+    // Handle window resizing
+    game.events.on('resize', resizeGame);
+}
 
 function update ()
 {
@@ -102,6 +113,26 @@ function update ()
     {
         player.setTexture('maxine_neutral');
     }
+}
+
+function resizeGame (gameSize, baseSize, displaySize, resolution)
+{
+    var width = gameSize.width;
+    var height = gameSize.height;
+
+    game.canvas.style.width = width + "px";
+    game.canvas.style.height = height + "px";
+
+    game.canvas.style.marginLeft = (window.innerWidth - width) / 2 + "px";
+    game.canvas.style.marginTop = (window.innerHeight - height) / 2 + "px";
+
+    // Update camera viewport
+    game.scene.scenes.forEach(function (scene) {
+        var camera = scene.cameras.main;
+        camera.setViewport(0, 0, width, height);
+	camera.startFollow(player);
+        camera.setBounds(0, 0, worldWidth, worldHeight);
+    });
 }
 
 </script>
