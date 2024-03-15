@@ -42,6 +42,10 @@ var game = new Phaser.Game(config);
 function preload ()
 {
     this.load.image('maxine_neutral', 'assets/maxine_neutral.png');
+    this.load.image('maxine_left', 'assets/maxine_left.png');
+    this.load.image('maxine_right', 'assets/maxine_right.png');
+    this.load.image('maxine_up', 'assets/maxine_up.png');
+    this.load.image('maxine_down', 'assets/maxine_down.png');
 }
 
 function create ()
@@ -65,23 +69,28 @@ function update ()
     if (cursors.left.isDown)
     {
         player.setVelocityX(-160);
+        player.setTexture('maxine_left');
     }
     else if (cursors.right.isDown)
     {
         player.setVelocityX(160);
+        player.setTexture('maxine_right');
     }
     else if (cursors.up.isDown)
     {
         player.setVelocityY(-160);
+        player.setTexture('maxine_up');
     }
     else if (cursors.down.isDown)
     {
         player.setVelocityY(160);
+        player.setTexture('maxine_down');
     }
     else
     {
         player.setVelocityX(0);
         player.setVelocityY(0);
+        player.setTexture('maxine_neutral');
     }
 }
 
