@@ -1,0 +1,91 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8" />
+    <title>Maxine's Quest</title>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+var config = {
+    type: Phaser.AUTO,
+    width: 800,
+    height: 600,
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 0 },
+            debug: false
+        }
+    },
+    scene: {
+        preload: preload,
+        create: create,
+        update: update
+    }
+};
+
+var player;
+var cursors;
+var score = 0;
+var scoreText;
+
+var game = new Phaser.Game(config);
+
+function preload ()
+{
+    this.load.image('maxine_neutral', 'assets/maxine_neutral.png');
+}
+
+function create ()
+{
+    // The player and its settings
+    player = this.physics.add.sprite(100, 450, 'maxine_neutral');
+
+    //  Player physics properties. Give Maxine a slight bounce.
+    player.setBounce(0.2);
+    player.setCollideWorldBounds(true);
+
+    //  Input Events
+    cursors = this.input.keyboard.createCursorKeys();
+
+    //  The score
+    scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
+}
+
+function update ()
+{
+    if (cursors.left.isDown)
+    {
+        player.setVelocityX(-160);
+    }
+    else if (cursors.right.isDown)
+    {
+        player.setVelocityX(160);
+    }
+    else if (cursors.up.isDown)
+    {
+        player.setVelocityY(-160);
+    }
+    else if (cursors.down.isDown)
+    {
+        player.setVelocityY(160);
+    }
+    else
+    {
+        player.setVelocityX(0);
+        player.setVelocityY(0);
+    }
+}
+
+</script>
+
+</body>
+</html>
