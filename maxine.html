@@ -36,6 +36,8 @@ var player;
 var cursors;
 var score = 0;
 var scoreText;
+var worldWidth = 1800;
+var worldHeight = 900;
 
 var game = new Phaser.Game(config);
 
@@ -50,18 +52,25 @@ function preload ()
 
 function create ()
 {
+    // Set world bounds
+    this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
+
     // The player and its settings
     player = this.physics.add.sprite(100, 450, 'maxine_neutral');
 
     //  Player physics properties.
     player.setCollideWorldBounds(true);
 
+    // Set camera bounds
+    this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
+    this.cameras.main.startFollow(player);
+
     //  Input Events
     cursors = this.input.keyboard.createCursorKeys();
 
     //  The score
     scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
-}
+    scoreText.setScrollFactor(0);}
 
 function update ()
 {
