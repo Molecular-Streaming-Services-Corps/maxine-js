@@ -37,8 +37,12 @@ var config = {
 
 var player;
 var cursors;
+var level = 1;
 var score = 0;
 var scoreText;
+var projectiles;
+var mushrooms;
+var monsterTimer;
 
 var game = new Phaser.Game(config);
 
@@ -49,6 +53,15 @@ function preload ()
     this.load.image('maxine_right', 'assets/maxine_right.png');
     this.load.image('maxine_up', 'assets/maxine_up.png');
     this.load.image('maxine_down', 'assets/maxine_down.png');
+
+    // Preload spore sprites
+    this.load.image('spore1', 'assets/spore1.png');
+    this.load.image('spore2', 'assets/spore2.png');
+    this.load.image('spore3', 'assets/spore3.png');
+
+    // Preload mushroom sprites
+    this.load.image('pink_oyster1', 'assets/pink_oyster1.png');
+    this.load.image('pink_oyster2', 'assets/pink_oyster2.png');
 }
 
 function create ()
@@ -81,10 +94,46 @@ function create ()
 
     // Handle window resizing
     game.events.on('resize', resizeGame);
+
+    // Create spore animation
+    this.anims.create({
+        key: 'spore_anim',
+        frames: [
+            { key: 'spore1' },
+            { key: 'spore2' },
+            { key: 'spore3' }
+        ],
+        frameRate: 30,
+        repeat: -1
+    });
+
+    // Create mushroom animation
+    this.anims.create({
+        key: 'mush_anim',
+        frames: [
+            { key: 'pink_oyster1' },
+            { key: 'pink_oyster2' }
+        ],
+        frameRate: 2,
+        repeat: -1
+    });
+
+    projectiles = this.physics.add.group();
+    // Create a sprite group for mushrooms
+    mushrooms = this.physics.add.group();
+
+    // Start the monster timer
+    monsterTimer = this.time.addEvent({
+        delay: Phaser.Math.Between(4000, 8000),
+        callback: addMonster,
+        callbackScope: this,
+        loop: true
+    });
 }
 
 function update ()
 {
+    // Control player movement
     player.setVelocity(0);
 
     if (cursors.left.isDown)
@@ -113,6 +162,19 @@ function update ()
     {
         player.setTexture('maxine_neutral');
     }
+
+
+    // Update each mushroom's position and angle based on its spiral state
+    mushrooms.children.iterate(function (mush) {
+        // Update the mushroom's spiral state
+        mush.spiral_state.update();
+
+        // Set the mushroom's position based on the spiral state
+        mush.setPosition(mush.spiral_state.pos[0], mush.spiral_state.pos[1]);
+
+        // Set the mushroom's angle based on the spiral state
+        mush.setAngle(mush.spiral_state.angle);
+    });
 }
 
 function resizeGame (gameSize, baseSize, displaySize, resolution)
@@ -133,6 +195,74 @@ function resizeGame (gameSize, baseSize, displaySize, resolution)
 	camera.startFollow(player);
         camera.setBounds(0, 0, worldWidth, worldHeight);
     });
+}
+
+function makeSpore(shroom) {
+    var spore = this.physics.add.sprite(shroom.x, shroom.y, 'spore1');
+    spore.setScale(0.25);
+    spore.play('spore_anim');
+
+
+    // Add the spore to the projectiles group. This must be done before setting its speed
+    // because adding it resets the speed to 0(!). See https://phaser.discourse.group/t/confused-about-physics-specifically-velocity/3019/2
+    projectiles.add(spore);
+
+    // Calculate the direction towards Maxine
+    var direction = Math.atan2(player.y - spore.y, player.x - spore.x);
+
+    // Set the spore's velocity based on the direction and speed. Velocity is in pixels per second!
+    var speed = 3 * 60;
+    spore.setVelocity(Math.cos(direction) * speed, Math.sin(direction) * speed);
+    //console.log("speed", Math.cos(direction) * speed, Math.sin(direction) * speed);
+}
+
+function makeMushroom(angle) {
+    var mush = this.physics.add.sprite(0, 0, 'pink_oyster1');
+    mush.setScale(0.5);
+    mush.play('mush_anim');
+
+    // Translate the Python lines to JavaScript
+    var rotation = angle - 20;
+    mush.spiral_state = new SpiralState(0.5, rotation, torusInnerHeight, 1, worldCenter, torusInnerWidth / torusInnerHeight);
+
+    // Add the mushroom to the mushrooms group
+    mushrooms.add(mush);
+
+    // Start the spore timer for the mushroom
+    mush.sporeTimer = this.time.addEvent({
+        delay: Phaser.Math.Between(2500, 5000),
+        callback: mushroomSporeTimer,
+        callbackScope: this,
+        args: [mush],
+        loop: true
+    });
+}
+
+function addMonster() {
+    if (level == 1 || level == 3) {
+    // Generate a random angle between 0 and 360 degrees
+    var randomAngle = Phaser.Math.Between(0, 360);
+
+    // Call the makeMushroom function with the random angle
+    makeMushroom.call(this, randomAngle);
+
+    // Restart the monster timer with a new random delay
+    monsterTimer.reset({
+        delay: Phaser.Math.Between(4000, 8000),
+        callback: addMonster,
+        callbackScope: this,
+        loop: true
+    });
+    }
+}
+
+
+function mushroomSporeTimer(mush) {
+    // Check if the mushroom exists and is far enough from the player
+    if (mush && mush.active && Phaser.Math.Distance.Between(mush.x, mush.y, player.x, player.y) > 300) {
+        // Call the makeSpore function with the mushroom
+        makeSpore.call(this, mush);
+    }
 }
 
 </script>
