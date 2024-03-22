@@ -43,6 +43,8 @@ var scoreText;
 var projectiles;
 var mushrooms;
 var monsterTimer;
+var pore;
+var boomFrames = []
 
 var game = new Phaser.Game(config);
 
@@ -62,6 +64,19 @@ function preload ()
     // Preload mushroom sprites
     this.load.image('pink_oyster1', 'assets/pink_oyster1.png');
     this.load.image('pink_oyster2', 'assets/pink_oyster2.png');
+
+    // Preload pore sprite
+    this.load.image('pore', 'assets/pore.png');
+
+    // Preload sound files
+    this.load.audio('eep', 'assets/eep.wav');
+    this.load.audio('good', 'assets/good.wav');
+
+    // Preload boom image files
+    for (var i = 1; i <= 30; i++) {
+        boomFrames.push({key: 'boom' + i});
+        this.load.image('boom' + i, 'assets/boom' + i + '.png');
+    }
 }
 
 function create ()
@@ -70,10 +85,15 @@ function create ()
     this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
 
     // The player and its settings
-    player = this.physics.add.sprite(100, 450, 'maxine_neutral');
+    player = this.physics.add.sprite(maxineStart[0], maxineStart[1], 'maxine_neutral');
+    player.setOrigin(0.5); 
 
     //  Player physics properties.
     player.setCollideWorldBounds(true);
+
+    // The pore.
+    pore = this.physics.add.sprite(worldCenter[0], worldCenter[1], 'pore');
+    pore.setOrigin(0.5);
 
     // Set camera bounds
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
@@ -118,6 +138,14 @@ function create ()
         repeat: -1
     });
 
+    // Create the boom animation
+    this.anims.create({
+        key: 'boom',
+        frames: boomFrames, //this.anims.generateFrameNames('boom', { start: 1, end: 30, prefix: 'boom', zeroPad: 0 }),
+        frameRate: 30,
+        repeat: 0
+    });
+
     projectiles = this.physics.add.group();
     // Create a sprite group for mushrooms
     mushrooms = this.physics.add.group();
@@ -129,6 +157,12 @@ function create ()
         callbackScope: this,
         loop: true
     });
+
+    // Set up collision detection between mushrooms and the pore
+    this.physics.add.overlap(mushrooms, pore, mushroomHitsPore, null, this);
+
+    // Set up collision detection between Maxine and the pore
+    this.physics.add.overlap(player, pore, maxineHitsPore, null, this);
 }
 
 function update ()
@@ -197,10 +231,57 @@ function resizeGame (gameSize, baseSize, displaySize, resolution)
     });
 }
 
+function mushroomHitsPore(pore, mushroom) {
+    // Destroy the mushroom when it hits the pore
+    mushroom.destroy();
+
+    // Clean up the spore timer
+    if (mushroom.sporeTimer) {
+        mushroom.sporeTimer.destroy();
+    }
+}
+
+function maxineHitsPore(maxine, pore) {
+    // Play the "eep" sound
+    this.sound.play('eep');
+
+    // Disable Maxine's movement
+    maxine.setVelocity(0);
+    maxine.setImmovable(true);
+    maxine.body.enable = false;
+
+    // Hide Maxine's sprite
+    maxine.setVisible(false);
+
+    // Create the explosion sprite at Maxine's position
+    var explosion = this.add.sprite(maxine.x, maxine.y, 'boom1');
+    explosion.setOrigin(0.5)
+
+    // Play the boom animation
+    explosion.play('boom');
+
+    // Reset Maxine's position and re-enable movement after the explosion animation completes
+    explosion.on('animationcomplete', function () {
+        // Reset Maxine's position to the start position
+        maxine.setPosition(maxineStart[0], maxineStart[1]);
+
+        // Enable Maxine's movement
+        maxine.setImmovable(false);
+        maxine.body.enable = true;
+
+        // Show Maxine's sprite
+        maxine.setVisible(true);
+
+        // Destroy the explosion sprite
+        explosion.destroy();
+    }, this);
+}
+
 function makeSpore(shroom) {
     var spore = this.physics.add.sprite(shroom.x, shroom.y, 'spore1');
     spore.setScale(0.25);
     spore.play('spore_anim');
+    spore.setOrigin(0.5);
 
 
     // Add the spore to the projectiles group. This must be done before setting its speed
@@ -220,6 +301,7 @@ function makeMushroom(angle) {
     var mush = this.physics.add.sprite(0, 0, 'pink_oyster1');
     mush.setScale(0.5);
     mush.play('mush_anim');
+    mush.setOrigin(0.5);
 
     // Translate the Python lines to JavaScript
     var rotation = angle - 20;
