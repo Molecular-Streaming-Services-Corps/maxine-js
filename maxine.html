@@ -44,9 +44,11 @@ var consoleScoreText;
 var challengerScoreText;
 var projectiles;
 var mushrooms;
+var spinners;
 var monsterTimer;
 var pore;
-var boomFrames = []
+var boomFrames = [];
+var spinshroomFrames = [];
 
 var game = new Phaser.Game(config);
 
@@ -78,6 +80,12 @@ function preload ()
     for (var i = 1; i <= 30; i++) {
         boomFrames.push({key: 'boom' + i});
         this.load.image('boom' + i, 'assets/boom' + i + '.png');
+    }
+
+    // Preload spinshroom image files
+    for (var i = 1; i <= 8; i++) {
+        spinshroomFrames.push({key: 'spinshroom' + i});
+        this.load.image('spinshroom'+i, 'assets/spinshroom' + i + '.png');
     }
 
     this.load.image('torus', 'assets/torus.png');
@@ -161,9 +169,18 @@ function create ()
         repeat: 0
     });
 
+    // Create the spinshroom animation
+    this.anims.create({
+        key: 'spinshroom_anim',
+        frames: spinshroomFrames,
+        frameRate: 10,
+        repeat: -1
+    });
+
     projectiles = this.physics.add.group();
     // Create a sprite group for mushrooms
     mushrooms = this.physics.add.group();
+    spinners = this.physics.add.group();
 
     // Start the monster timer
     monsterTimer = this.time.addEvent({
@@ -181,6 +198,9 @@ function create ()
 
     // Set up collision detection between Maxine and the mushrooms
     this.physics.add.overlap(player, mushrooms, maxineHitsMushroom, null, this);
+
+    // Set up collisoin detection between Maxine and the spinshrooms
+    this.physics.add.overlap(player, spinners, maxineHitsMushroom, null, this);
 
     // Set up collision detection between Maxine and the spores
     this.physics.add.overlap(player, projectiles, maxineHitsProjectile, null, this);
@@ -371,13 +391,44 @@ function makeMushroom(angle) {
     });
 }
 
+function makeSpinner() {
+    var side = Math.random() > 0.5;
+
+    var r = torusInnerRadius;
+    var theta = side ? 0 : 180;
+    var x, y;
+    [x, y] = pol2cart(r, theta);
+    [x, y] = adjustCoords(x, y);
+
+    var spinner = this.physics.add.sprite(x, y, 'spinshroom1');
+    spinners.add(spinner);
+
+    spinner.play('spinshroom_anim');
+    spinner.setOrigin(0.5);
+    spinner.setScale(0.2);
+
+    var speed = 3 * 60;
+    if (side)
+        spinner.setVelocity(-speed, 0);
+    else
+        spinner.setVelocity(speed, 0);
+
+}
+
 function addMonster() {
     if (level == 1 || level == 3) {
     // Generate a random angle between 0 and 360 degrees
     var randomAngle = Phaser.Math.Between(0, 360);
 
-    // Call the makeMushroom function with the random angle
-    makeMushroom.call(this, randomAngle);
+    var makeNormalMonster = Math.random() < 0.67;
+
+    if (!makeNormalMonster) {
+        makeSpinner.call(this);
+    } else {
+         // Call the makeMushroom function with the random angle
+         makeMushroom.call(this, randomAngle);
+    }
+
 
     // Restart the monster timer with a new random delay
     monsterTimer.reset({
