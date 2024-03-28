@@ -38,8 +38,10 @@ var config = {
 var player;
 var cursors;
 var level = 1;
-var score = 0;
-var scoreText;
+var consoleScore = 0;
+var challengerScore = 0;
+var consoleScoreText;
+var challengerScoreText;
 var projectiles;
 var mushrooms;
 var monsterTimer;
@@ -102,10 +104,12 @@ function create ()
     //  Input Events
     cursors = this.input.keyboard.createCursorKeys();
 
-    //  The score
-    scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
-    scoreText.setScrollFactor(0);
+    //  The scores
+    consoleScoreText = this.add.text(16, 16, 'Zavier: 0', { fontSize: '32px', fill: '#0000ff' });
+    consoleScoreText.setScrollFactor(0);
 
+    challengerScoreText = this.add.text(16, 48, 'Kent: 0', { fontSize: '32px', fill: '#0000ff' });
+    challengerScoreText.setScrollFactor(0);
 
     // Add blue rectangle outline representing the world bounds
     var graphics = this.add.graphics();
@@ -209,6 +213,21 @@ function update ()
         // Set the mushroom's angle based on the spiral state
         mush.setAngle(mush.spiral_state.angle);
     });
+}
+
+function increaseConsoleScore(points) {
+  consoleScore += points;
+  scoresChanged();
+}
+
+function increaseChallengerScore(points) {
+  challengerScore += points;
+  scoresChanged();
+}
+
+function scoresChanged() {
+    consoleScoreText.setText('Zavier: ' + consoleScore);
+    challengerScoreText.setText('Kent: ' + challengerScore);
 }
 
 function resizeGame (gameSize, baseSize, displaySize, resolution)
