@@ -167,6 +167,12 @@ function create ()
 
     // Set up collision detection between Maxine and the pore
     this.physics.add.overlap(player, pore, maxineHitsPore, null, this);
+
+    // Set up collision detection between Maxine and the mushrooms
+    this.physics.add.overlap(player, mushrooms, maxineHitsMushroom, null, this);
+
+    // Set up collision detection between Maxine and the spores
+    this.physics.add.overlap(player, projectiles, maxineHitsProjectile, null, this);
 }
 
 function update ()
@@ -294,6 +300,21 @@ function maxineHitsPore(maxine, pore) {
         // Destroy the explosion sprite
         explosion.destroy();
     }, this);
+
+    increaseConsoleScore(100);
+}
+
+function maxineHitsMushroom(maxine, mushroom) {
+    // Play the "good" sound
+    this.sound.play('good');
+    increaseChallengerScore(100);
+    mushroom.destroy();
+}
+
+function maxineHitsProjectile(maxine, projectile) {
+   this.sound.play('eep');
+   increaseConsoleScore(100);
+   projectile.destroy();
 }
 
 function makeSpore(shroom) {
