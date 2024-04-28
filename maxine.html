@@ -199,7 +199,7 @@ function create ()
     // Set up collision detection between Maxine and the mushrooms
     this.physics.add.overlap(player, mushrooms, maxineHitsMushroom, null, this);
 
-    // Set up collisoin detection between Maxine and the spinshrooms
+    // Set up collision detection between Maxine and the spinshrooms
     this.physics.add.overlap(player, spinners, maxineHitsMushroom, null, this);
 
     // Set up collision detection between Maxine and the spores
@@ -249,6 +249,24 @@ function update ()
 
         // Set the mushroom's angle based on the spiral state
         mush.setAngle(mush.spiral_state.angle);
+    });
+
+    // Delete spinshrooms or projectiles that hit the torus.
+    projectiles.children.iterate(function (spore) {
+       // The group includes undefined objects that have been destroyed already.
+       if (spore === undefined) return;
+
+       if (pointOutsideSignalRing([spore.x, spore.y])) {
+          spore.destroy();
+       }
+    });
+
+    spinners.children.iterate(function (spinner) {
+       if (spinner === undefined) return;
+
+       if (pointOutsideSignalRing([spinner.x, spinner.y])) {
+          spinner.destroy();
+       }
     });
 }
 
@@ -420,9 +438,12 @@ function addMonster() {
     // Generate a random angle between 0 and 360 degrees
     var randomAngle = Phaser.Math.Between(0, 360);
 
-    var makeNormalMonster = Math.random() < 0.67;
+// Boolean expressions have Bizarro World behavior in JavaScript
+//    var makeNormalMonster = (Math.random() < 0.67);
 
-    if (!makeNormalMonster) {
+    var randomNumber = Math.random();
+
+    if (randomNumber > 0.67) {
         makeSpinner.call(this);
     } else {
          // Call the makeMushroom function with the random angle
@@ -447,6 +468,17 @@ function mushroomSporeTimer(mush) {
         // Call the makeSpore function with the mushroom
         makeSpore.call(this, mush);
     }
+}
+
+function pointOutsideSignalRing(point) {
+    var rx = torusInnerWidth / 2;
+    var ry = torusInnerHeight / 2;
+    var scaledCoords = [point[0] - worldCenter[0],
+                        (point[1] - worldCenter[1]) * rx/ry];
+
+    // Calculate the 2 norm because it's what StackOverflow told me to do. It's just the distance.
+    var norm = distance_points(scaledCoords, [0, 0]);
+    return norm > rx;
 }
 
 </script>
