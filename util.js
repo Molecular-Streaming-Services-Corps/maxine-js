@@ -49,10 +49,12 @@ class SpiralState {
 // Stretch in the x dimension to match the greater width of the torus,
 // and then add the center to the Cartesian coordinates
 function adjustCoords(x, y) {
-    widthToHeightRatio = torusInnerWidth / torusInnerHeight
+    const widthToHeightRatio = torusInnerWidth / torusInnerHeight
 
-    x = widthToHeightRatio * x + worldCenter[0]
-    y = y + worldCenter[1]
+    var newx, newy
 
-    return [x, y]
+    newx = widthToHeightRatio * x + worldCenter[0]
+    newy = y + worldCenter[1]
+
+    return [newx, newy]
 }

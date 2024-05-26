@@ -19,3 +19,5 @@ const ringRadius = Math.min(ringWidth, ringHeight) / 2;
 
 // For speeding up or slowing down the whole game. Doesn't work yet.
 const worldSpeed = 1;
+
+const numBoxes = 300;

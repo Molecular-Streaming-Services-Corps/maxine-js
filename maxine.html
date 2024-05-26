@@ -6,6 +6,7 @@
     <script src="//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
     <script src="constants.js"></script>
     <script src="util.js"></script>
+    <script src="graphs.js"></script>
     <style type="text/css">
         body {
             margin: 0;
@@ -49,6 +50,7 @@ var monsterTimer;
 var pore;
 var boomFrames = [];
 var spinshroomFrames = [];
+var vlr;
 
 var game = new Phaser.Game(config);
 
@@ -204,6 +206,11 @@ function create ()
 
     // Set up collision detection between Maxine and the spores
     this.physics.add.overlap(player, projectiles, maxineHitsProjectile, null, this);
+
+    // Create the vertical line ring
+    vlr = new VerticalLineRing();
+
+    this.graphics=this.add.graphics();
 }
 
 function update ()
@@ -268,6 +275,12 @@ function update ()
           spinner.destroy();
        }
     });
+
+    this.graphics.clear();
+
+    // Add the lines in the signal ring
+    vlr.advanceOneFrame()
+    vlr.draw(this.graphics)
 }
 
 function increaseConsoleScore(points) {
