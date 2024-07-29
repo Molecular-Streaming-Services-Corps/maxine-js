@@ -3,7 +3,7 @@
 <head> 
     <meta charset="UTF-8" />
     <title>Maxine's Quest</title>
-    <script src="//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"></script>
     <script src="constants.js"></script>
     <script src="util.js"></script>
     <script src="graphs.js"></script>
@@ -51,6 +51,7 @@ var pore;
 var boomFrames = [];
 var spinshroomFrames = [];
 var vlr;
+var bgVideo;
 
 var game = new Phaser.Game(config);
 
@@ -91,10 +92,19 @@ function preload ()
     }
 
     this.load.image('torus', 'assets/torus.png');
+
+    // load background video
+    this.load.video('mountains', 'mountains.mp4', true);
 }
 
 function create ()
 {
+    // Set up the background video
+    bgVideo = this.add.video(0, 0, 'mountains').setOrigin(0);
+    bgVideo.displayHeight = worldHeight;
+    bgVideo.displayWidth = worldWidth;
+    bgVideo.play(true);
+
     // Set world bounds
     this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
 
