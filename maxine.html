@@ -19,8 +19,9 @@
 <!-- Content that goes before the Maxine canvas. -->
 
 <select id="levelSelect">
-    <option value="1">Level 1</option>
-    <option value="2">Level 2</option>
+    <option value="1">Mostly Pink Oyster Mushrooms</option>
+    <option value="2">Mostly SpinShrooms</option>
+    <option value="3">Introducing Purple Mushrooms</option>
 </select>
 
 <script type="text/javascript">
@@ -53,6 +54,7 @@ var challengerScoreText;
 var projectiles;
 var mushrooms;
 var spinners;
+var bouncers;
 var monsterTimer;
 var pore;
 var boomFrames = [];
@@ -97,6 +99,9 @@ function preload ()
         spinshroomFrames.push({key: 'spinshroom' + i});
         this.load.image('spinshroom'+i, 'assets/spinshroom' + i + '.png');
     }
+
+    // Preload bouncer image file
+    this.load.image('purple_mushroom', 'assets/purple_mushroom.png');
 
     this.load.image('torus', 'assets/torus.png');
 
@@ -198,9 +203,10 @@ function create ()
     });
 
     projectiles = this.physics.add.group();
-    // Create a sprite group for mushrooms
+    // Create sprite groups for different kinds of mushrooms
     mushrooms = this.physics.add.group();
     spinners = this.physics.add.group();
+    bouncers = this.physics.add.group();
 
     // Start the monster timer
     monsterTimer = this.time.addEvent({
@@ -221,6 +227,13 @@ function create ()
 
     // Set up collision detection between Maxine and the spinshrooms
     this.physics.add.overlap(player, spinners, maxineHitsSpinshroom, null, this);
+
+    // Set up collision detection between Maxine and the bouncers
+    // (using the same function for the same behavior)
+    this.physics.add.overlap(player, bouncers, maxineHitsSpinshroom, null, this);
+
+    // Set up collision detection between bouncers and the pore
+    this.physics.add.overlap(bouncers, pore, bouncerHitsPore, null, this);
 
     // Set up collision detection between Maxine and the spores
     this.physics.add.overlap(player, projectiles, maxineHitsProjectile, null, this);
@@ -295,6 +308,21 @@ function update ()
        }
     });
 
+    let physics = this.physics;
+    bouncers.children.iterate(function (bouncer) {
+        var speed = 300;
+        // Set the velocity based on the angle. It uses pixels per second.
+        physics.velocityFromAngle(bouncer.angle, speed, bouncer.body.velocity);
+
+        if (pointOutsideSignalRing([bouncer.x, bouncer.y])) {
+            // Move back to the previous frame's position, and change angle to bounce.
+            [bouncer.x, bouncer.y] = bouncer._MQoldPos;
+            bounceOffWall(bouncer);
+        }
+
+        bouncer._MQoldPos = [bouncer.x, bouncer.y];
+    });
+
     this.graphics.clear();
 
     // Add the lines in the signal ring
@@ -318,8 +346,8 @@ function increaseChallengerScore(points) {
 }
 
 function scoresChanged() {
-    consoleScoreText.setText('Zavier: ' + consoleScore);
-    challengerScoreText.setText('Kent: ' + challengerScore);
+    consoleScoreText.setText('Kent: ' + consoleScore);
+    challengerScoreText.setText('Zavier: ' + challengerScore);
 }
 
 // Written by an old version of Claude; doesn't work.
@@ -344,13 +372,23 @@ function resizeGame (gameSize, baseSize, displaySize, resolution)
 }
 
 function mushroomHitsPore(pore, mushroom) {
-    // Destroy the mushroom when it hits the pore
+    // Destroy the mushroom when it hits the pore.
+    // Used for pink oysters.
     mushroom.destroy();
 
     // Clean up the spore timer
     if (mushroom.sporeTimer) {
         mushroom.sporeTimer.destroy();
     }
+}
+
+function bouncerHitsPore(pore, bouncer) {
+    // Destroy the bouncer when it hits the pore.
+    // Used for purple mushrooms (bouncers).
+    bouncer.destroy();
+    this.sound.play('good');
+
+    increaseChallengerScore(100);
 }
 
 function maxineHitsPore(maxine, pore) {
@@ -477,10 +515,28 @@ function makeSpinner() {
 
 }
 
+function makeBouncer(angle) {
+    var r = torusInnerRadius;
+    var theta = angle;
+
+    var x, y
+    [x, y] = pol2cart(r, theta);
+    [x, y] = adjustCoords(x, y);
+
+    var bouncer = this.physics.add.sprite(x, y, 'purple_mushroom');
+    bouncer.setOrigin(0.5);
+    bounceOffWall(bouncer);
+    bouncer._MQoldPos = [bouncer.x, bouncer.y];
+
+    // Add the bouncer to the group
+    bouncers.add(bouncer);
+}
+
 function addMonster() {
-    if (level === 1 || level === 2) {
     // Generate a random angle between 0 and 360 degrees
     var randomAngle = Phaser.Math.Between(0, 360);
+
+    if (level === 1 || level === 2) {
 
 // Boolean expressions have Bizarro World behavior in JavaScript
 //    var makeNormalMonster = (Math.random() < 0.67);
@@ -494,16 +550,17 @@ function addMonster() {
          // Call the makeMushroom function with the random angle
          makeMushroom.call(this, randomAngle);
     }
-
+    } else if (level === 3) {
+        makeBouncer.call(this, randomAngle);
+    }
 
     // Restart the monster timer with a new random delay
     monsterTimer.reset({
-        delay: Phaser.Math.Between(4000, 8000),
+        delay: Phaser.Math.Between(2000, 6000),
         callback: addMonster,
         callbackScope: this,
         loop: true
     });
-    }
 }
 
 
@@ -513,6 +570,12 @@ function mushroomSporeTimer(mush) {
         // Call the makeSpore function with the mushroom
         makeSpore.call(this, mush);
     }
+}
+
+// Called when purple musrhooms start at the wall or hit the wall after moving
+function bounceOffWall(monster) {
+    var newDirection = Phaser.Math.Between(0, 360);
+    monster.angle = newDirection;
 }
 
 function pointOutsideSignalRing(point) {
