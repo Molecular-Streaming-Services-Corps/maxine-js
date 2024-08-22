@@ -314,6 +314,16 @@ function updateStatusBar() {
     }
 }
 
+function resetLevel() {
+    var ls = document.getElementById("levelSelect");
+    var text = ls.options[ls.selectedIndex].text;
+    document.getElementById("statusBar").textContent = text;
+
+    consoleScore = 0;
+    challengerScore = 0;
+    scoresChanged();
+}
+
 function increaseConsoleScore(points) {
     consoleScore += points;
     if (consoleScore > 1000) consoleScore = 1000;
