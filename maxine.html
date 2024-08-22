@@ -212,7 +212,7 @@ function create ()
     this.physics.add.overlap(player, mushrooms, maxineHitsMushroom, null, this);
 
     // Set up collision detection between Maxine and the spinshrooms
-    this.physics.add.overlap(player, spinners, maxineHitsMushroom, null, this);
+    this.physics.add.overlap(player, spinners, maxineHitsSpinshroom, null, this);
 
     // Set up collision detection between Maxine and the spores
     this.physics.add.overlap(player, projectiles, maxineHitsProjectile, null, this);
@@ -308,6 +308,7 @@ function scoresChanged() {
     challengerScoreText.setText('Kent: ' + challengerScore);
 }
 
+// Written by an old version of Claude; doesn't work.
 function resizeGame (gameSize, baseSize, displaySize, resolution)
 {
     var width = gameSize.width;
@@ -387,6 +388,12 @@ function maxineHitsProjectile(maxine, projectile) {
    this.sound.play('eep');
    increaseConsoleScore(100);
    projectile.destroy();
+}
+
+function maxineHitsSpinshroom(maxine, spinshroom) {
+   this.sound.play('eep');
+   increaseConsoleScore(100);
+   spinshroom.destroy();
 }
 
 function makeSpore(shroom) {
