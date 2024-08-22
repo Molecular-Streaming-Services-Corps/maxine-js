@@ -503,14 +503,15 @@ function makeBouncer(angle) {
 function addMonster() {
     // Generate a random angle between 0 and 360 degrees
     var randomAngle = Phaser.Math.Between(0, 360);
+    var randomNumber = Math.random();
+    var ratio;
 
     if (level === 1 || level === 2) {
 
         // Boolean expressions have Bizarro World behavior in JavaScript
         //    var makeNormalMonster = (Math.random() < 0.67);
 
-        var randomNumber = Math.random();
-        var ratio = (level === 1) ? 0.67 : 0.33;
+        ratio = (level === 1) ? 0.67 : 0.33;
 
         if (randomNumber > ratio) {
             makeSpinner.call(this);
@@ -519,7 +520,13 @@ function addMonster() {
             makeMushroom.call(this, randomAngle);
         }
     } else if (level === 3) {
-        makeBouncer.call(this, randomAngle);
+        ratio = 0.8;
+
+        if (randomNumber > ratio) {
+            makeSpinner.call(this);
+        } else {
+            makeBouncer.call(this, randomAngle);
+        }
     }
 
     // Restart the monster timer with a new random delay
