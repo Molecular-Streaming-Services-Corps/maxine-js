@@ -27,14 +27,17 @@ var projectiles;
 var mushrooms;
 var spinners;
 var bouncers;
+var cannons;
 var monsterTimer;
 var pore;
 var boomFrames = [];
 var spinshroomFrames = [];
+var mushromancerFrames = [];
 var vlr;
 var bgVideo;
 
 var game = new Phaser.Game(config);
+var scene;
 
 function preload() {
     this.load.image('maxine_neutral', 'assets/maxine_neutral.png');
@@ -71,6 +74,12 @@ function preload() {
         this.load.image('spinshroom' + i, 'assets/spinshroom' + i + '.png');
     }
 
+    // Preload mushromancer image files
+    for (var i = 1; i <= 4; i++) {
+        mushromancerFrames.push({ key: 'mushromancer' + i });
+        this.load.image('mushromancer' + i, 'assets/mushromancer' + i + '.png');
+    }
+
     // Preload bouncer image file
     this.load.image('purple_mushroom', 'assets/purple_mushroom.png');
 
@@ -78,6 +87,8 @@ function preload() {
 
     // load background video
     this.load.video('mountains', 'mountains.mp4', true);
+
+    scene = this;
 }
 
 function create() {
@@ -173,11 +184,20 @@ function create() {
         repeat: -1
     });
 
+    // Create the cannon animation
+    this.anims.create({
+        key: 'mushromancer_anim',
+        frames: mushromancerFrames,
+        frameRate: 10,
+        repeat: -1
+    })
+
     projectiles = this.physics.add.group();
     // Create sprite groups for different kinds of mushrooms
     mushrooms = this.physics.add.group();
     spinners = this.physics.add.group();
     bouncers = this.physics.add.group();
+    cannons = this.physics.add.group();
 
     // Start the monster timer
     monsterTimer = this.time.addEvent({
@@ -203,6 +223,9 @@ function create() {
     // (using the same function for the same behavior)
     this.physics.add.overlap(player, bouncers, maxineHitsSpinshroom, null, this);
 
+    // Maxine and the cannon(s)
+    this.physics.add.overlap(player, cannons, maxineHitsPore, null, this)
+
     // Set up collision detection between bouncers and the pore
     this.physics.add.overlap(bouncers, pore, bouncerHitsPore, null, this);
 
@@ -213,6 +236,9 @@ function create() {
     vlr = new VerticalLineRing();
 
     this.graphics = this.add.graphics();
+
+    // Initialize the current level.
+    resetLevel();
 }
 
 function update() {
@@ -279,9 +305,11 @@ function update() {
 
     let physics = this.physics;
     bouncers.children.iterate(function (bouncer) {
+        if (bouncer === undefined) return;
+
         var speed = 300;
         // Set the velocity based on the angle. It uses pixels per second.
-        physics.velocityFromAngle(bouncer.angle, speed, bouncer.body.velocity);
+        scene.physics.velocityFromAngle(bouncer.angle, speed, bouncer.body.velocity);
 
         if (pointOutsideSignalRing([bouncer.x, bouncer.y])) {
             // Move back to the previous frame's position, and change angle to bounce.
@@ -298,10 +326,6 @@ function update() {
     vlr.advanceOneFrame()
     vlr.draw(this.graphics)
 
-    var ls = document.getElementById("levelSelect");
-    var value = Number(ls.options[ls.selectedIndex].value);
-    var text = ls.options[ls.selectedIndex].text;
-    level = value;
 
     updateStatusBar();
 }
@@ -329,6 +353,26 @@ function resetLevel() {
     consoleScore = 0;
     challengerScore = 0;
     scoresChanged();
+
+    var ls = document.getElementById("levelSelect");
+    var value = Number(ls.options[ls.selectedIndex].value);
+    var text = ls.options[ls.selectedIndex].text;
+    level = value;
+
+    // Remove the previous cannon if applicable
+    cannons.children.iterate(function (cannon) {
+        if (cannon !== undefined) {
+            if (cannon._MQsporeTimer !== undefined) {
+                cannon._MQsporeTimer.destroy();
+            }
+            cannon.destroy();
+        }
+    });
+
+    // Initialize specific levels
+    if (level == 4) {
+        makeCannon();
+    }
 }
 
 function increaseConsoleScore(points) {
@@ -446,7 +490,7 @@ function maxineHitsSpinshroom(maxine, spinshroom) {
 }
 
 function makeSpore(shroom) {
-    var spore = this.physics.add.sprite(shroom.x, shroom.y, 'spore1');
+    var spore = scene.physics.add.sprite(shroom.x, shroom.y, 'spore1');
     spore.setScale(0.25);
     spore.play('spore_anim');
     spore.setOrigin(0.5);
@@ -529,6 +573,24 @@ function makeBouncer(angle) {
     bouncers.add(bouncer);
 }
 
+function makeCannon() {
+    // Make the cannon/mushromancer at the center of the level.
+    var cannon = scene.physics.add.sprite(worldCenter[0], worldCenter[1], 'mushromancer1');
+    cannon.setOrigin(0.5);
+    cannon.play('mushromancer_anim');
+    cannons.add(cannon);
+    cannon._MQshooting = false;
+
+    // Start the spore timer for the cannon
+    cannon._MQsporeTimer = scene.time.addEvent({
+        delay: 1000,
+        callback: makeSpore,
+        callbackScope: this,
+        args: [cannon],
+        loop: true
+    });
+}
+
 function addMonster() {
     // Generate a random angle between 0 and 360 degrees
     var randomAngle = Phaser.Math.Between(0, 360);
@@ -548,7 +610,7 @@ function addMonster() {
             // Call the makeMushroom function with the random angle
             makeMushroom.call(this, randomAngle);
         }
-    } else if (level === 3) {
+    } else if (level === 3 || level === 4) {
         ratio = 0.8;
 
         if (randomNumber > ratio) {
