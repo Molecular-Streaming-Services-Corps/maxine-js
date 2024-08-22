@@ -133,6 +133,7 @@ function create ()
     player = this.physics.add.sprite(maxineStart[0], maxineStart[1], 'maxine_neutral');
     player.setOrigin(0.5);
     player.scale = 0.5
+    player._MQoldPos = [player.x, player.y]
 
     //  Player physics properties.
     player.setCollideWorldBounds(true);
@@ -277,6 +278,10 @@ function update ()
         player.setTexture('maxine_neutral');
     }
 
+    if (pointOutsideSignalRing([player.x, player.y])) {
+        [player.x, player.y] = player._MQoldPos;
+    }
+    player._MQoldPos = [player.x, player.y];
 
     // Update each mushroom's position and angle based on its spiral state
     mushrooms.children.iterate(function (mush) {
