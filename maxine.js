@@ -307,10 +307,17 @@ function update() {
 }
 
 function updateStatusBar() {
+    var levelFinished = false;
     if (consoleScore >= 1000) {
         document.getElementById("statusBar").textContent = "Slightly less successful";
+        levelFinished = true;
     } else if (challengerScore >= 1000) {
         document.getElementById("statusBar").textContent = "You win!";
+        levelFinished = true;
+    }
+
+    if (levelFinished) {
+        setTimeout(resetLevel, 5000);
     }
 }
 
