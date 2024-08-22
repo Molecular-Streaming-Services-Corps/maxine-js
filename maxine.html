@@ -16,6 +16,13 @@
 </head>
 <body>
 
+<!-- Content that goes before the Maxine canvas. -->
+
+<select id="levelSelect">
+    <option value="1">Level 1</option>
+    <option value="2">Level 2</option>
+</select>
+
 <script type="text/javascript">
 
 var config = {
@@ -291,6 +298,11 @@ function update ()
     // Add the lines in the signal ring
     vlr.advanceOneFrame()
     vlr.draw(this.graphics)
+
+    var ls = document.getElementById("levelSelect");
+    var value = Number(ls.options[ls.selectedIndex].value);
+    var text = ls.options[ls.selectedIndex].text;
+    level = value;
 }
 
 function increaseConsoleScore(points) {
@@ -464,7 +476,7 @@ function makeSpinner() {
 }
 
 function addMonster() {
-    if (level == 1 || level == 3) {
+    if (level === 1 || level === 2) {
     // Generate a random angle between 0 and 360 degrees
     var randomAngle = Phaser.Math.Between(0, 360);
 
@@ -472,8 +484,9 @@ function addMonster() {
 //    var makeNormalMonster = (Math.random() < 0.67);
 
     var randomNumber = Math.random();
+    var ratio = (level === 1) ? 0.67 : 0.33;
 
-    if (randomNumber > 0.67) {
+    if (randomNumber > ratio) {
         makeSpinner.call(this);
     } else {
          // Call the makeMushroom function with the random angle
