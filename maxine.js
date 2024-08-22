@@ -302,15 +302,27 @@ function update() {
     var value = Number(ls.options[ls.selectedIndex].value);
     var text = ls.options[ls.selectedIndex].text;
     level = value;
+
+    updateStatusBar();
+}
+
+function updateStatusBar() {
+    if (consoleScore >= 1000) {
+        document.getElementById("statusBar").textContent = "Slightly less successful";
+    } else if (challengerScore >= 1000) {
+        document.getElementById("statusBar").textContent = "You win!";
+    }
 }
 
 function increaseConsoleScore(points) {
     consoleScore += points;
+    if (consoleScore > 1000) consoleScore = 1000;
     scoresChanged();
 }
 
 function increaseChallengerScore(points) {
     challengerScore += points;
+    if (challengerScore > 1000) challengerScore = 1000;
     scoresChanged();
 }
 
