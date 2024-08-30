@@ -370,7 +370,7 @@ function resetLevel() {
     });
 
     // Initialize specific levels
-    if (level == 4) {
+    if (level == 4 || level == 5) {
         makeCannon();
     }
 }
@@ -597,10 +597,7 @@ function addMonster() {
     var randomNumber = Math.random();
     var ratio;
 
-    if (level === 1 || level === 2) {
-
-        // Boolean expressions have Bizarro World behavior in JavaScript
-        //    var makeNormalMonster = (Math.random() < 0.67);
+    if (level === 1 || level === 2 || level === 4) {
 
         ratio = (level === 1) ? 0.67 : 0.33;
 
@@ -610,7 +607,7 @@ function addMonster() {
             // Call the makeMushroom function with the random angle
             makeMushroom.call(this, randomAngle);
         }
-    } else if (level === 3 || level === 4) {
+    } else if (level === 3 || level === 5) {
         ratio = 0.8;
 
         if (randomNumber > ratio) {
