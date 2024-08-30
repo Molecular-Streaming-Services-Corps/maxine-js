@@ -533,9 +533,11 @@ function makeMushroom(angle) {
 }
 
 function makeSpinner() {
-    var side = Math.random() > 0.5;
+    var side = (Math.random() > 0.5);
 
-    var r = torusInnerRadius;
+    // Make them start slightly inside the signal ring so they don't get
+    // removed right away if they start on the left side
+    var r = torusInnerRadius - 10;
     var theta = side ? 0 : 180;
     var x, y;
     [x, y] = pol2cart(r, theta);
