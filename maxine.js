@@ -1,3 +1,5 @@
+const debug = true;
+
 var config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
@@ -6,7 +8,7 @@ var config = {
         default: 'arcade',
         arcade: {
             gravity: { y: 0 },
-            debug: false
+            debug: debug
         }
     },
     scene: {
@@ -35,9 +37,20 @@ var spinshroomFrames = [];
 var mushromancerFrames = [];
 var vlr;
 var bgVideo;
+var masterSpiralRotation = 0;
+var cannonShooting = true;
+var cannonBlastDelay = 500;
+var cannonBlastTimeout = cannonBlastDelay;
+var cannonSporeTimeout = 60;
 
 var game = new Phaser.Game(config);
 var scene;
+
+function debugWarn(message) {
+    if (debug) {
+        console.warn(message);
+    }
+}
 
 function preload() {
     this.load.image('maxine_neutral', 'assets/maxine_neutral.png');
@@ -92,11 +105,11 @@ function preload() {
 }
 
 function create() {
-    // Set up the background video
-    bgVideo = this.add.video(0, 0, 'mountains').setOrigin(0);
-    bgVideo.displayHeight = worldHeight;
-    bgVideo.displayWidth = worldWidth;
-    bgVideo.play(true);
+    // // Set up the background video
+    // bgVideo = this.add.video(0, 0, 'mountains').setOrigin(0);
+    // bgVideo.displayHeight = worldHeight;
+    // bgVideo.displayWidth = worldWidth;
+    // bgVideo.play(true);
 
     // Set world bounds
     this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
@@ -141,9 +154,6 @@ function create() {
     var graphics = this.add.graphics();
     graphics.lineStyle(4, 0x0000ff, 1);
     graphics.strokeRect(0, 0, worldWidth, worldHeight);
-
-    // Handle window resizing
-    game.events.on('resize', resizeGame);
 
     // Create spore animation
     this.anims.create({
@@ -239,9 +249,23 @@ function create() {
 
     // Initialize the current level.
     resetLevel();
+
+    if (debug) {
+        this.debugText = this.add.text(10, 10, '', { fontSize: '16px', fill: '#fff' });
+        this.debugText.setScrollFactor(0);
+    }
 }
 
 function update() {
+    if (debug) {
+        this.debugText.setText([
+            `Spore count: ${projectiles.getChildren().length}`,
+            `Cannon timeout: ${cannonBlastTimeout}`,
+            `Player position: ${Math.floor(player.x)}, ${Math.floor(player.y)}`,
+            `Level: ${level}`
+        ].join('\n'));
+    }
+
     // Control player movement
     player.setVelocity(0);
     let speed = 360;
@@ -323,8 +347,46 @@ function update() {
     this.graphics.clear();
 
     // Add the lines in the signal ring
-    vlr.advanceOneFrame()
-    vlr.draw(this.graphics)
+    //vlr.advanceOneFrame()
+    //vlr.draw(this.graphics)
+
+
+    // Add the spirals if desired. Keep rotation on for a Mushromancer spiral level
+    masterSpiralRotation = (masterSpiralRotation + 1) % 360;
+    //drawSpiral(masterSpiralRotation + 0, this.graphics);
+    //drawSpiral(masterSpiralRotation + 180, this.graphics)
+
+    // Get the gurk cannon to make a ring of spores and throw them at Maxine
+    if (level == 6) {
+        cannonBlastTimeout -= 1;
+        cannonSporeTimeout -= 5;
+        if (cannonBlastTimeout >= 0) {
+            projectiles.children.iterate(function (spore) {
+                let ss = new SpiralState(0.5, masterSpiralRotation, ringHeight - 10,
+                    1, worldCenter, ringWidth / ringHeight);
+                ss.update();
+                var angle = (ss.angle + 90) % 360;
+                // scene.physics.velocityFromAngle(angle, 3, spore.body.velocity);
+                spore.setPosition(ss.pos[0], ss.pos[1]);
+            });
+        } else {
+            if (cannonBlastTimeout == -1) {
+                cannonShooting = false;
+                projectiles.children.iterate(function (spore) {
+                    let angleBetween = Math.atan2(spore.y - player.y, spore.x - player.x);//Between(spore.x, spore.y, player.x, player.y);
+                    scene.physics.velocityFromAngle(angleBetween, 10 * 60, spore.body.velocity);
+                });
+            }
+
+
+            var sporeCount = projectiles.children.length;
+
+            if (sporeCount == 0) {
+                cannonBlastTimeout = cannonBlastDelay;
+                cannonShooting = true;
+            }
+        }
+    }
 
 
     updateStatusBar();
@@ -370,7 +432,7 @@ function resetLevel() {
     });
 
     // Initialize specific levels
-    if (level == 4 || level == 5) {
+    if (level == 4 || level == 5 || level == 6) {
         makeCannon();
     }
 }
@@ -392,25 +454,6 @@ function scoresChanged() {
     challengerScoreText.setText('Zavier: ' + challengerScore);
 }
 
-// Written by an old version of Claude; doesn't work.
-function resizeGame(gameSize, baseSize, displaySize, resolution) {
-    var width = gameSize.width;
-    var height = gameSize.height;
-
-    game.canvas.style.width = width + "px";
-    game.canvas.style.height = height + "px";
-
-    game.canvas.style.marginLeft = (window.innerWidth - width) / 2 + "px";
-    game.canvas.style.marginTop = (window.innerHeight - height) / 2 + "px";
-
-    // Update camera viewport
-    game.scene.scenes.forEach(function (scene) {
-        var camera = scene.cameras.main;
-        camera.setViewport(0, 0, width, height);
-        camera.startFollow(player);
-        camera.setBounds(0, 0, worldWidth, worldHeight);
-    });
-}
 
 function mushroomHitsPore(pore, mushroom) {
     // Destroy the mushroom when it hits the pore.
@@ -489,7 +532,7 @@ function maxineHitsSpinshroom(maxine, spinshroom) {
     spinshroom.destroy();
 }
 
-function makeSpore(shroom) {
+function makeSpore(shroom, startMoving = true) {
     var spore = scene.physics.add.sprite(shroom.x, shroom.y, 'spore1');
     spore.setScale(0.25);
     spore.play('spore_anim');
@@ -500,13 +543,18 @@ function makeSpore(shroom) {
     // because adding it resets the speed to 0(!). See https://phaser.discourse.group/t/confused-about-physics-specifically-velocity/3019/2
     projectiles.add(spore);
 
-    // Calculate the direction towards Maxine
-    var direction = Math.atan2(player.y - spore.y, player.x - spore.x);
+    if (startMoving) {
+        // Calculate the direction towards Maxine
+        var direction = Math.atan2(player.y - spore.y, player.x - spore.x);
 
-    // Set the spore's velocity based on the direction and speed. Velocity is in pixels per second!
-    var speed = 3 * 60;
-    spore.setVelocity(Math.cos(direction) * speed, Math.sin(direction) * speed);
-    //console.log("speed", Math.cos(direction) * speed, Math.sin(direction) * speed);
+        // Set the spore's velocity based on the direction and speed. Velocity is in pixels per second!
+        var speed = 3 * 60;
+        spore.setVelocity(Math.cos(direction) * speed, Math.sin(direction) * speed);
+        //console.log("speed", Math.cos(direction) * speed, Math.sin(direction) * speed);
+    }
+
+
+    debugWarn(console.log(`Spore created at (${spore.x}, ${spore.y})`));
 }
 
 function makeMushroom(angle) {
@@ -588,7 +636,7 @@ function makeCannon() {
         delay: 1000,
         callback: makeSpore,
         callbackScope: this,
-        args: [cannon],
+        args: [cannon, false],
         loop: true
     });
 }
@@ -654,3 +702,16 @@ function pointOutsideSignalRing(point) {
     return norm > rx;
 }
 
+// Somehow doesn't do anything. I'm mystified.
+function drawSpiral(rotation, graphics) {
+    const gap = 0.5;
+    const maxTheta = torusInnerHeight;
+    const stepDegrees = 10;
+
+    for (var theta = 0; theta < maxTheta; theta += stepDegrees) {
+        var x, y;
+        [x, y] = spiral(gap, rotation, theta);
+        [x, y] = adjustCoords(x, y);
+        graphics.fillCircle(x, y, 1);
+    }
+}

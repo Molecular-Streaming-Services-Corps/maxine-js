@@ -2,14 +2,14 @@
 // Used by the signal ring. It's based on the signal ring's size
 // rather than the torus's size.
 function adjustCoordsRing(x, y) {
-    const widthToHeightRatio = ringWidth / ringHeight
+	const widthToHeightRatio = ringWidth / ringHeight
 
-    var newx, newy
+	var newx, newy
 
-    newx = widthToHeightRatio * x + worldCenter[0]
-    newy = y + worldCenter[1]
+	newx = widthToHeightRatio * x + worldCenter[0]
+	newy = y + worldCenter[1]
 
-    return [newx, newy]
+	return [newx, newy]
 }
 
 
@@ -51,16 +51,16 @@ class VerticalLineRing {
 
 			var top = this.tops[i];
 			var bottom = this.bottoms[i];
-		
+
 			var angle = ((dataStartBox + i) * 360 / numBoxes) % 360;
 			this.drawLine(graphics, angle, top, bottom, color);
 		}
-		this.drawLine(graphics, this.getPresentAngle(), -2*this.lineExtent, 0, 0xbb0000);
+		this.drawLine(graphics, this.getPresentAngle(), -2 * this.lineExtent, 0, 0xbb0000);
 	}
 
 	getPresentAngle() {
 		return this.presentBox * 360 / numBoxes;
-	}	
+	}
 
 	drawLine(graphics, theta, top, bottom, color) {
 		// Calculate the coordinates for the inner end of the line
@@ -76,9 +76,13 @@ class VerticalLineRing {
 		[outerX, outerY] = pol2cart(r2, theta);
 		var outerCoords = adjustCoordsRing(outerX, outerY);
 
-		graphics.lineStyle(4,color);
-		graphics.moveTo(innerCoords[0],innerCoords[1]);
-		graphics.lineTo(outerCoords[0],outerCoords[1]);
+		graphics.lineStyle(4, color);
+		graphics.moveTo(innerCoords[0], innerCoords[1]);
+		graphics.lineTo(outerCoords[0], outerCoords[1]);
 		graphics.strokePath();
+
+		for (var x = 0, y = 0; x < 1000, y < 1000; x++, y++) {
+			graphics.fillCircle(x, y, 1);
+		}
 	}
 }
